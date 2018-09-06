@@ -1,0 +1,12 @@
+Name: NewsDB
+Table: NewsListTable
+INTEGER id
+TEXT    title
+TEXT    description
+TEXT    author
+TEXT    type
+TEXT    date
+INTEGER read
+INTEGER favorite
+blob    image
+
