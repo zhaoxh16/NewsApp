@@ -265,6 +265,7 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
 
                 ObjectInputStream input = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
                 Map<String, String> returnMap = (Map<String,String>)input.readObject();
+                socket.close();
                 returnStr = returnMap.get("returnStr");
                 String returnFlag = returnMap.get("registerFlag");
                 if(returnFlag.equals("true")) return true;
@@ -281,6 +282,7 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
             showProgress(false);
 
             if (success) {
+                ((NewsApplication)getApplicationContext()).loginStatus = true;
                 finish();
             } else {
                 mPasswordView.setError(returnStr);

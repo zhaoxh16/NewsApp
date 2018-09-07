@@ -30,11 +30,7 @@ public class NewsItem implements Serializable{
         if(!(obj instanceof NewsItem)) return false;
         NewsItem newsObj = (NewsItem)obj;
         if(!this.title.equals(newsObj.title)) return false;
-        if(!this.link.equals(newsObj.link)) return false;
-        if(!this.author.equals(newsObj.author)) return false;
-        if(!this.description.equals(newsObj.description)) return false;
         if(this.timestamp != newsObj.timestamp) return false;
-        if(!this.category.equals(newsObj.category)) return false;
         return true;
     }
 }

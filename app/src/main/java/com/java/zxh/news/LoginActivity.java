@@ -281,9 +281,15 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
                 ObjectInputStream input = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
                 Map<String, String> returnMap = (Map<String,String>)input.readObject();
+                socket.close();
                 returnStr = returnMap.get("returnStr");
                 String returnFlag = returnMap.get("loginFlag");
-                if(returnFlag.equals("true")) return true;
+                if(returnFlag.equals("true")){
+                    //同步收藏
+                    Socket socket2 = new Socket(host, port);
+
+                    return true;
+                }
                 else return false;
             }catch(Exception e) {
                 e.printStackTrace();

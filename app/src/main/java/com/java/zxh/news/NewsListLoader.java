@@ -27,6 +27,9 @@ public class NewsListLoader extends AsyncTaskLoader<List<NewsItem>> {
     @Nullable
     @Override
     public List<NewsItem> loadInBackground() {
+        if(category.equals(NewsCategoryList.NewsCategory.FAVORITE.toString())){
+            ((NewsApplication)getContext().getApplicationContext()).newsCategoryList.synchronizeFavorite();
+        }
         NewsCategoryList newsCategoryList = ((NewsApplication)getContext().getApplicationContext()).newsCategoryList;
         newsCategoryList.updateNews(NewsCategoryList.NewsCategory.valueOf(category), number);
         return null;

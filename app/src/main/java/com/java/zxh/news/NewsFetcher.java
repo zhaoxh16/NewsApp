@@ -47,6 +47,7 @@ public class NewsFetcher {
 
             ObjectInputStream input = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
             ArrayList<ArrayList> newsObject =  (ArrayList<ArrayList>)input.readObject();
+            socket.close();
             return newsObject;
         }catch(Exception e) {
             e.printStackTrace();

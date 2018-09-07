@@ -3,13 +3,24 @@ package com.java.zxh.news;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.AsyncTask;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.net.Socket;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class NewsCategoryList{
     private HashMap<NewsCategory, List<NewsItem>> newsMap;
@@ -21,6 +32,7 @@ public class NewsCategoryList{
     private List<NewsItem> removeFavoriteNewsList;
     private String searchWord;
     private String lastSearchWord;
+    private List<NewsItemFavoriteControl> favoriteControlList;
 
     public void setCategoryList(List<NewsCategory> categoryList){
         this.categoryList = categoryList;
@@ -40,7 +52,44 @@ public class NewsCategoryList{
         }
     }
 
+    private void setFavoriteControlListToDB(NewsItem item, SQLiteDatabase db){
+        System.out.println("setFavoriteControListToDB"+item.title);
+        Date date = new Date();
+        if(item.favorite){
+            NewsItemFavoriteControl favoriteControlItem = new NewsItemFavoriteControl(item, "add", date.getTime());
+            if(favoriteControlList.contains(favoriteControlItem)){
+                favoriteControlList.remove(favoriteControlItem);
+            }
+            favoriteControlList.add(favoriteControlItem);
+            Cursor cursor = db.rawQuery("select * from NewsListFavoriteControlTable where title = ? and timestamp = ?",
+                    new String[]{item.title,((Long)item.timestamp).toString()});
+            if(cursor.getCount() == 0){
+                db.execSQL("insert into NewsListFavoriteControlTable(title, timestamp, category, act, addtimestamp) values(?,?,?,?,?)",
+                        new Object[]{item.title, item.timestamp, item.category.toString(), "add", date.getTime()});
+            }else {
+                db.execSQL("update NewsListFavoriteControlTable set act = ?, addtimestamp = ? where title = ? and timestamp = ?",
+                        new Object[]{"add", date.getTime(), item.title, item.timestamp});
+            }
+        }else{
+            NewsItemFavoriteControl favoriteControlItem = new NewsItemFavoriteControl(item, "remove", date.getTime());
+            if(favoriteControlList.contains(favoriteControlItem)){
+                favoriteControlList.remove(favoriteControlItem);
+            }
+            favoriteControlList.add(favoriteControlItem);
+            Cursor cursor = db.rawQuery("select * from NewsListFavoriteControlTable where title = ? and timestamp = ?",
+                    new String[]{item.title,((Long)item.timestamp).toString()});
+            if(cursor.getCount() == 0){
+                db.execSQL("insert into NewsListFavoriteControlTable(title, timestamp, category,  act, addtimestamp) values(?,?,?,?,?)",
+                        new Object[]{item.title, item.timestamp, item.category.toString(), "remove", date.getTime()});
+            }else {
+                db.execSQL("update NewsListFavoriteControlTable set act = ?, addtimestamp = ? where title = ? and timestamp = ?",
+                        new Object[]{"remove", date.getTime(), item.title, item.timestamp});
+            }
+        }
+    }
+
     public void setFavorite(NewsItem item){
+        System.out.println("setFavorite"+item.title);
         SQLiteDatabase db = ((NewsApplication)context).databaseHelper.getWritableDatabase();
         if(item.favorite) {
             db.execSQL("update NewsListTable set favorite = 0 where title = ? and timestamp = ?",
@@ -55,12 +104,13 @@ public class NewsCategoryList{
             if(removeFavoriteNewsList.contains(item)) removeFavoriteNewsList.remove(item);
             else newFavoriteNewsList.add(item);
         }
-
+        setFavoriteControlListToDB(item, db);
     }
 
     public NewsCategoryList(Context context){
         newFavoriteNewsList = new ArrayList<NewsItem>();
         removeFavoriteNewsList = new ArrayList<NewsItem>();
+        this.favoriteControlList = new ArrayList<NewsItemFavoriteControl>();
         searchWord = "";
         lastSearchWord = "";
         newsMap = new HashMap<NewsCategory, List<NewsItem>>();
@@ -73,7 +123,15 @@ public class NewsCategoryList{
         }
         newsFetcher = new NewsFetcher();
         this.context = context;
-        getNewsFromLocal();
+        AsyncTask<Void, Void, Void> newTask = new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... voids) {
+                getNewsFromLocal();
+                getNewsFromInternet();
+                return null;
+            }
+        };
+        newTask.execute();
     }
 
     public boolean setSearchWord(String word){
@@ -110,6 +168,10 @@ public class NewsCategoryList{
             removeFavoriteNewsList.clear();
             Collections.reverse(newsMap.get(category));
             newsMap.get(category).addAll(newFavoriteNewsList);
+            Set<NewsItem> tempSet = new HashSet<NewsItem>();
+            tempSet.addAll(newsMap.get(category));
+            newsMap.get(category).clear();
+            newsMap.get(category).addAll(tempSet);
             Collections.reverse(newsMap.get(category));
             newFavoriteNewsList.clear();
             loadNewsMap.get(category).clear();
@@ -174,6 +236,106 @@ public class NewsCategoryList{
         }
     }
 
+    public void synchronizeFavorite(){
+        System.out.println("synchronizeFavorite");
+        try {
+            String host = "59.66.130.36";
+            int port = 8888;
+            Socket socket = new Socket(host, port);
+            ObjectOutputStream output = new ObjectOutputStream(new BufferedOutputStream(socket.getOutputStream()));
+            String mac = new MACAddressFetcher().getAdresseMAC(context);
+            HashMap<String, Object> map = new HashMap<String, Object>();
+            map.put("macAddress", mac);
+            map.put("activity", "synchronizeFavorite");
+            List<Map<String, Object>> favoriteListUser = new ArrayList<Map<String, Object>>();
+            for(NewsItemFavoriteControl itemFavoriteControl: favoriteControlList){
+                Map<String,Object> favoriteMap = new HashMap<String,Object>();
+                favoriteMap.put("title",itemFavoriteControl.newsItem.title);
+                favoriteMap.put("timestamp",itemFavoriteControl.newsItem.timestamp);
+                favoriteMap.put("category",itemFavoriteControl.newsItem.category.toString());
+                favoriteMap.put("act",itemFavoriteControl.action);
+                favoriteMap.put("addtimestamp",itemFavoriteControl.timestamp);
+                favoriteListUser.add(favoriteMap);
+            }
+            map.put("param", favoriteListUser);
+            output.writeObject(map);
+            output.flush();
+            ObjectInputStream input = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
+            Object inputObject = input.readObject();
+            socket.close();
+            if(inputObject == null) return;
+            else{
+                List<Map<String, Object>> favoriteListSynchronized = (List<Map<String, Object>>)inputObject;
+                SQLiteDatabase db = ((NewsApplication)context).databaseHelper.getWritableDatabase();
+                db.execSQL("delete from NewsListFavoriteControlTable");
+                List<NewsItemFavoriteControl> newList = new ArrayList<NewsItemFavoriteControl>();
+                for(Map<String,Object> m:favoriteListSynchronized){
+                    NewsCategory category = NewsCategory.valueOf((String)m.get("category"));
+                    NewsItem newItem = new NewsItem((String)m.get("title"),null,null,null,(Long)m.get("timestamp"),false,false,category);
+                    int index = newsMap.get(category).indexOf(newItem);
+                    NewsItem item = newsMap.get(category).get(index);
+                    String action = (String)m.get("act");
+                    NewsItemFavoriteControl newsItemFavoriteControl = new NewsItemFavoriteControl(item, action, (Long)m.get("addtimestamp"));
+                    newList.add(newsItemFavoriteControl);
+                    if(!item.favorite && action.equals("remove")) {
+                        setFavoriteControlListToDB(item, db);
+                    }
+                    else if(item.favorite && action.equals("add")){
+                        setFavoriteControlListToDB(item, db);
+                    }
+                    else{
+                        setFavorite(item);
+                    }
+                }
+                favoriteControlList = newList;
+            }
+        }catch(Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void getNewsFromInternet(){
+        //将服务器上的收藏下载下来
+        try {
+            String host = "59.66.130.36";
+            int port = 8888;
+            Socket socket = new Socket(host, port);
+            ObjectOutputStream output = new ObjectOutputStream(new BufferedOutputStream(socket.getOutputStream()));
+            String mac = new MACAddressFetcher().getAdresseMAC(context);
+            HashMap<String, Object> map = new HashMap<String, Object>();
+            map.put("macAddress", mac);
+            map.put("activity", "getFavorite");
+            map.put("param", null);
+            output.writeObject(map);
+            output.flush();
+            ObjectInputStream input = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
+            Object inputObject = input.readObject();
+            socket.close();
+            if(inputObject == null) return;
+            else{
+                List<Map<String, Object>> favoriteListServer = (List<Map<String, Object>>)inputObject;
+                for(Map<String,Object> m:favoriteListServer){
+                    String title = (String)m.get("title");
+                    String link = (String)m.get("link");
+                    String author = (String)m.get("author");
+                    String description = (String)m.get("description");
+                    Long timestamp = (Long)m.get("timestamp");
+                    boolean read = false;
+                    boolean favorite = false;
+                    NewsCategory category = NewsCategory.valueOf((String)m.get("category"));
+                    NewsItem item = new NewsItem(title, link, author, description, timestamp, read, favorite, category);
+                    newsMap.get(category).add(item);
+                }
+            }
+            socket.close();
+        }catch(Exception e) {
+            e.printStackTrace();
+        }
+
+        //同步收藏
+        synchronizeFavorite();
+    }
+
     private void getNewsFromLocal(){
         categoryList = new ArrayList<NewsCategory>();
         DatabaseHelper helper = ((NewsApplication)context).databaseHelper;
@@ -222,6 +384,24 @@ public class NewsCategoryList{
                 loadNewsMap.get(category).addAll(newsMap.get(category));
         }
         cursor.close();
+
+        //加载已保存的favoriteControl
+        querySQL = "select * from NewsListFavoriteControlTable";
+        cursor = db.rawQuery(querySQL, null);
+        while(cursor.moveToNext()) {
+            String title = cursor.getString(0);
+            Long timestamp = cursor.getLong(1);
+            String category = cursor.getString(2);
+            String act = cursor.getString(3);
+            Long addtimestamp = cursor.getLong(4);
+            NewsItem newsItem = new NewsItem(title, null, null, null, timestamp, false, false, NewsCategory.valueOf(category));
+            int index = newsMap.get(NewsCategory.valueOf(category)).indexOf(newsItem);
+            if(index==-1) continue;
+            NewsItem item = newsMap.get(NewsCategory.valueOf(category)).get(index);
+            NewsItemFavoriteControl itemFavoriteControl = new NewsItemFavoriteControl(item, act, addtimestamp);
+            favoriteControlList.add(itemFavoriteControl);
+        }
+        cursor.close();
     }
 
     public List<NewsItem> getNews(String category){
@@ -234,8 +414,8 @@ public class NewsCategoryList{
 
     public enum NewsCategory {
         NATIONAL, MOVIE, FINANCE, TECHNOLOGY, GAME, EDUCATION,
-        CONSTELLATION, PHONE, ANIME, FASHION, JOKE, CHILDREN, SPORT,
+        CONSTELLATION, ANIME, FASHION, JOKE, CHILDREN, SPORT,
         FAVORITE, SEARCH
-        //PARENT, WEATHER, SECURITIES, CAR, VIDEO, BOOK, FEMALE
+        //PARENT, WEATHER, SECURITIES, CAR, VIDEO, BOOK, PHONE, FEMALE
     }
 }

@@ -30,6 +30,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         if(number == 0){
             db.execSQL("insert into SelectedCategoryTable(name) values ('NATIONAL')");
         }
+        createTable = "create table if not exists NewsListFavoriteControlTable " +
+                "(title TEXT, "+
+                "timestamp INTEGER," +
+                "category TEXT, " +
+                "act TEXT, " +
+                "addtimestamp INTEGER)";
+        db.execSQL(createTable);
     }
 
     @Override

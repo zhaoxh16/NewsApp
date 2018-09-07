@@ -114,7 +114,6 @@ public class NewsDetailsActivity extends AppCompatActivity {
 
             private File saveImage(Bitmap bitmap){
                 String path = Environment.getExternalStorageDirectory().getPath()+"/testCachedImage";
-                System.out.println(path);
                 File file=new File(path);
                 FileOutputStream fileOutputStream=null;
                 //文件夹不存在，则创建它
