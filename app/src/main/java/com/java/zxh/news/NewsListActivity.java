@@ -116,9 +116,9 @@ public class NewsListActivity extends AppCompatActivity {
             public void onClick(DialogInterface dialog, int which) {
                 Toast.makeText(context, "你输入的是: " + edit.getText().toString(), Toast.LENGTH_SHORT).show();
                 boolean flag = ((NewsApplication)getApplicationContext()).newsCategoryList.setSearchWord(edit.getText().toString());
-                mViewPager.setCurrentItem(1);
+                mViewPager.setCurrentItem(2);
                 PagerAdapter f = mViewPager.getAdapter();
-                NewsListFragment fragment = (NewsListFragment) f.instantiateItem(mViewPager, 1);
+                NewsListFragment fragment = (NewsListFragment) f.instantiateItem(mViewPager, 2);
                 fragment.loadNumber = 10;
                 fragment.getLoaderManager().restartLoader(fragment.loaderID, null, fragment);
             }

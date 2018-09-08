@@ -40,13 +40,16 @@ public class NewsCategoryList{
             categoryList.remove(NewsCategory.FAVORITE);
         if(categoryList.contains(NewsCategory.SEARCH))
             categoryList.remove(NewsCategory.SEARCH);
-        this.categoryList.add(0,NewsCategory.FAVORITE);
-        this.categoryList.add(1,NewsCategory.SEARCH);
+        if(categoryList.contains(NewsCategory.RECOMMEND))
+            categoryList.remove(NewsCategory.RECOMMEND);
+        this.categoryList.add(0,NewsCategory.RECOMMEND);
+        this.categoryList.add(1,NewsCategory.FAVORITE);
+        this.categoryList.add(2,NewsCategory.SEARCH);
         DatabaseHelper helper = ((NewsApplication)context).databaseHelper;
         SQLiteDatabase db = helper.getWritableDatabase();
         db.execSQL("delete from SelectedCategoryTable");
         for(NewsCategory category: categoryList){
-            if(category == NewsCategory.FAVORITE||category == NewsCategory.SEARCH) continue;
+            if(category == NewsCategory.FAVORITE||category == NewsCategory.SEARCH || category==NewsCategory.RECOMMEND) continue;
             String categoryString = category.toString();
             db.execSQL("insert into SelectedCategoryTable(name) values (?)",new Object[]{categoryString});
         }
@@ -187,6 +190,17 @@ public class NewsCategoryList{
                 return;
             }
             searchNews(category, number);
+            return;
+        }
+        else if(category == NewsCategory.RECOMMEND){
+            newsMap.get(category).clear();
+            newsMap.remove(category);
+            newsMap.put(category, new RecommendAlgorithm(((NewsApplication)context.getApplicationContext()).newsCategoryList.newsMap).getRecommendList());
+            loadNewsMap.get(category).clear();
+            if(number<newsMap.get(category).size())
+                loadNewsMap.get(category).addAll(newsMap.get(category).subList(0,number));
+            else
+                loadNewsMap.get(category).addAll(newsMap.get(category));
             return;
         }
         ArrayList<ArrayList> newsArray = newsFetcher.getCategoryNews(category, context);
@@ -343,8 +357,9 @@ public class NewsCategoryList{
             categoryList.add(category);
         }
         cursor.close();
-        categoryList.add(0,NewsCategory.FAVORITE);
-        categoryList.add(1,NewsCategory.SEARCH);
+        categoryList.add(0,NewsCategory.RECOMMEND);
+        categoryList.add(1,NewsCategory.FAVORITE);
+        categoryList.add(2,NewsCategory.SEARCH);
 
         // 加载已保存的新闻列表
         querySQL = "select * from NewsListTable order by timestamp desc";
@@ -408,7 +423,7 @@ public class NewsCategoryList{
     public enum NewsCategory {
         NATIONAL, MOVIE, FINANCE, TECHNOLOGY, GAME, EDUCATION,
         CONSTELLATION, ANIME, FASHION, JOKE, CHILDREN, SPORT,
-        FAVORITE, SEARCH
+        FAVORITE, SEARCH, RECOMMEND
         //PARENT, WEATHER, SECURITIES, CAR, VIDEO, BOOK, PHONE, FEMALE
     }
 }

@@ -169,6 +169,7 @@ public class NewsListFragment extends Fragment implements SwipeRefreshLayout.OnR
                 return;
             }
             holder.mItem = newsItemList.get(position);
+            if(holder.mItem == null) return;
             holder.mSourceView.setText(newsItemList.get(position).author);
             long nowTimeLong=newsItemList.get(position).timestamp;
             DateFormat ymdhmsFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
