@@ -168,10 +168,6 @@ public class NewsCategoryList{
             removeFavoriteNewsList.clear();
             Collections.reverse(newsMap.get(category));
             newsMap.get(category).addAll(newFavoriteNewsList);
-            Set<NewsItem> tempSet = new HashSet<NewsItem>();
-            tempSet.addAll(newsMap.get(category));
-            newsMap.get(category).clear();
-            newsMap.get(category).addAll(tempSet);
             Collections.reverse(newsMap.get(category));
             newFavoriteNewsList.clear();
             loadNewsMap.get(category).clear();
@@ -239,9 +235,7 @@ public class NewsCategoryList{
     public void synchronizeFavorite(){
         System.out.println("synchronizeFavorite");
         try {
-            String host = "59.66.130.36";
-            int port = 8888;
-            Socket socket = new Socket(host, port);
+            Socket socket = ((NewsApplication)context.getApplicationContext()).getNewServerSocket();
             ObjectOutputStream output = new ObjectOutputStream(new BufferedOutputStream(socket.getOutputStream()));
             String mac = new MACAddressFetcher().getAdresseMAC(context);
             HashMap<String, Object> map = new HashMap<String, Object>();
@@ -297,9 +291,7 @@ public class NewsCategoryList{
     private void getNewsFromInternet(){
         //将服务器上的收藏下载下来
         try {
-            String host = "59.66.130.36";
-            int port = 8888;
-            Socket socket = new Socket(host, port);
+            Socket socket = ((NewsApplication)context.getApplicationContext()).getNewServerSocket();
             ObjectOutputStream output = new ObjectOutputStream(new BufferedOutputStream(socket.getOutputStream()));
             String mac = new MACAddressFetcher().getAdresseMAC(context);
             HashMap<String, Object> map = new HashMap<String, Object>();
@@ -324,7 +316,8 @@ public class NewsCategoryList{
                     boolean favorite = false;
                     NewsCategory category = NewsCategory.valueOf((String)m.get("category"));
                     NewsItem item = new NewsItem(title, link, author, description, timestamp, read, favorite, category);
-                    newsMap.get(category).add(item);
+                    if(newsMap.get(category).contains(item)) continue;
+                    else newsMap.get(category).add(item);
                 }
             }
             socket.close();

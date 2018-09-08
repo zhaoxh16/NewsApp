@@ -247,9 +247,7 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
         @Override
         protected Boolean doInBackground(Void... params) {
             try {
-                String host = "59.66.130.36";
-                int port = 8888;
-                Socket socket = new Socket(host, port);
+                Socket socket = ((NewsApplication)getApplicationContext()).getNewServerSocket();
                 ObjectOutputStream output = new ObjectOutputStream(new BufferedOutputStream(socket.getOutputStream()));
                 String mac = new MACAddressFetcher().getAdresseMAC(RegisterActivity.this);
                 HashMap<String, Serializable> map = new HashMap<String, Serializable>();

@@ -217,9 +217,18 @@ public class NewsDetailsActivity extends AppCompatActivity {
         else if(id == R.id.action_share){
             share();
             return true;
+        }else if(id == R.id.action_comment){
+            comment();
+            return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void comment(){
+        Intent commentIntent = new Intent(NewsDetailsActivity.this, CommentActivity.class);
+        commentIntent.putExtra("item",mItem);
+        startActivity(commentIntent);
     }
 
     private void share(){
@@ -227,13 +236,14 @@ public class NewsDetailsActivity extends AppCompatActivity {
         Uri uri;
         if(hasImage) uri = imageURI;
         else uri=null;
-        String content = mItem.link+'\n'+mItem.title+'\n'+mItem.description;
+        String content = "["+mItem.title+"]\n"+mItem.description+"\n(详情请见："+mItem.link+")";
 
         if(uri!=null){
             shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
             shareIntent.setType("image/*");
             //当用户选择短信时使用sms_body取得文字
             shareIntent.putExtra("sms_body", content);
+            shareIntent.putExtra("Kdescription",content);
         }else{
             shareIntent.setType("text/plain");
         }

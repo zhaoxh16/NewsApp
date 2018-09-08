@@ -263,9 +263,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         protected Boolean doInBackground(Void... params) {
             // TODO: attempt authentication against a network service.
             try {
-                String host = "59.66.130.36";
-                int port = 8888;
-                Socket socket = new Socket(host, port);
+                Socket socket = ((NewsApplication)getApplicationContext()).getNewServerSocket();
                 ObjectOutputStream output = new ObjectOutputStream(new BufferedOutputStream(socket.getOutputStream()));
                 String mac = new MACAddressFetcher().getAdresseMAC(LoginActivity.this);
                 HashMap<String, Serializable> map = new HashMap<String, Serializable>();
@@ -286,7 +284,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 String returnFlag = returnMap.get("loginFlag");
                 if(returnFlag.equals("true")){
                     //同步收藏
-                    Socket socket2 = new Socket(host, port);
+                    Socket socket2 = ((NewsApplication)getApplicationContext()).getNewServerSocket();
 
                     return true;
                 }

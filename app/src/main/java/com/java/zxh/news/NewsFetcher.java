@@ -32,9 +32,7 @@ public class NewsFetcher {
 
     public ArrayList<ArrayList> getCategoryNews(NewsCategoryList.NewsCategory category, Context context){
         try {
-            String host = "59.66.130.36";
-            int port = 8888;
-            Socket socket = new Socket(host, port);
+            Socket socket = ((NewsApplication)context.getApplicationContext()).getNewServerSocket();
             ObjectOutputStream output = new ObjectOutputStream(new BufferedOutputStream(socket.getOutputStream()));
 
             String mac = new MACAddressFetcher().getAdresseMAC(context);
