@@ -158,6 +158,10 @@ public class NewsCategoryList{
             }
         }
         newsMap.get(category).addAll(tempList);
+        Set<NewsItem> tempSet = new HashSet<NewsItem>();
+        tempSet.addAll(newsMap.get(category));
+        newsMap.get(category).clear();
+        newsMap.get(category).addAll(tempSet);
         if(number<newsMap.get(category).size())
             loadNewsMap.get(category).addAll(newsMap.get(category).subList(0,number));
         else

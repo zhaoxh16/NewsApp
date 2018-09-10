@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">News</string>
+    <string name="app_name">赵欣昊_News</string>
     <string name="action_settings">Settings</string>
     <string name="action_category_choose">Categories</string>
     <string name="section_format">Hello World from section: %1$d</string>

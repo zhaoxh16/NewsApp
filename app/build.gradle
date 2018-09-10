@@ -30,4 +30,5 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
     implementation files('libs/android-rome-feed-reader-1.0.0-r2.jar')
     implementation files('libs/jdom-1.1.1-android-fork.jar')
+    implementation 'com.qmuiteam:qmui:1.1.3'
 }

@@ -168,6 +168,12 @@ public class NewsListFragment extends Fragment implements SwipeRefreshLayout.OnR
             if (getActivity() == null) {
                 return;
             }
+            if(position>newsItemList.size()){
+                holder.mItem = null;
+                holder.mSourceView.setText("Not found");
+                holder.mDatetimeView.setText("Not found");
+                holder.mTitleView.setText("Not found");
+            }
             holder.mItem = newsItemList.get(position);
             if(holder.mItem == null) return;
             holder.mSourceView.setText(newsItemList.get(position).author);
@@ -185,6 +191,7 @@ public class NewsListFragment extends Fragment implements SwipeRefreshLayout.OnR
             holder.mView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    if(holder.mItem == null) return;
                     holder.mItem.read = true;
                     notifyItemChanged(holder.getAdapterPosition());
                     Context context = v.getContext();
